@@ -11,12 +11,14 @@ import {
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import DownloadIcon from "@mui/icons-material/Download";
 import CircularProgress from "@mui/material/CircularProgress";
+import { HexColorPicker } from "react-colorful";
+import { Switch } from "@mui/material";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [promptValue, setPromptValue] = useState("");
   const [qrdata, setQrData] = useState(null);
-  const [color, setColor] = useState("#000000");
+  const [dataColor, setDataColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,8 +52,10 @@ export default function Home() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    setQrData(null);
     setIsLoading(true);
 
+    // Url validation
     if (!inputValue.trim()) {
       setError((prev) => ({ ...prev, url: "Please enter a valid URL." }));
       setIsLoading(false);
@@ -78,7 +82,7 @@ export default function Home() {
 
       // Fetch the base QR code from our API
       const baseQR = await fetch(
-        `/api/base-qr?url=${encodeURIComponent(normalizedUrl)}&color=${encodeURIComponent(color)}`,
+        `/api/base-qr?url=${encodeURIComponent(normalizedUrl)}&dataColor=${encodeURIComponent(dataColor)}&logo=${encodeURIComponent(logo)}`,
       );
 
       if (!baseQR.ok) {
@@ -114,6 +118,7 @@ export default function Home() {
         body: JSON.stringify({
           baseQrURL: data.qrCode,
           userPrompt: promptValue,
+          originalUrl: normalizedUrl,
         }),
       });
 
@@ -166,14 +171,15 @@ export default function Home() {
           flex: 1,
           borderRadius: 4,
           textAlign: "center",
-          bgcolor: "#fdfdfd",
+          bgcolor: "#ffff",
+          mb: 4,
         }}
       >
         <Typography
           variant="h4"
-          sx={{ mb: 3, fontWeight: "bold", color: "#1a202c" }}
+          sx={{ mb: 3, fontWeight: "bold", color: "#fffff" }}
         >
-          QR Generator
+          Artistic AI QR code Generator
         </Typography>
 
         <Box
@@ -184,81 +190,208 @@ export default function Home() {
           <TextField
             fullWidth
             disabled={isLoading}
-            label="Enter URL"
-            variant="outlined"
+            placeholder="Enter URL"
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value);
               setError((prev) => ({ ...prev, url: "" }));
             }}
-            sx={{ bgcolor: "white" }}
+            sx={{
+              bgcolor: "#E6E3EA",
+              borderRadius: "8px",
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#555552", // normal
+                },
+                "&:hover fieldset": {
+                  borderColor: "#704977", // hover color
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#704977", // focus color
+                },
+              },
+            }}
             error={!!error.url}
             helperText={error.url ?? " "}
           />
 
-          <TextField
-            disabled={isLoading}
-            label="Foreground QR Color"
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            sx={{ width: 150 }}
-          />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: "stretch",
+              gap: 4,
+              justifyContent: "center",
+              p: 3,
+              bgcolor: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #eaeaea",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  mb: 1.5,
+                  color: "#888",
+                  fontWeight: 700,
+                  display: "block",
+                }}
+              >
+                Data Color
+              </Typography>
+              <Box
+                sx={{
+                  "& .react-colorful": {
+                    width: "100%",
+                    height: "160px",
+                    borderRadius: "12px",
+                  },
+                }}
+              >
+                <HexColorPicker color={dataColor} onChange={setDataColor} />
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                flex: 1,
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    mb: 1.5,
+                    color: "#888",
+                    fontWeight: 700,
+                    display: "block",
+                  }}
+                >
+                  Branding
+                </Typography>
+                <input
+                  disabled={isLoading}
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/svg+xml"
+                  style={{ display: "none" }}
+                  onChange={handleLogoUpload}
+                />
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    disabled={isLoading}
+                    onClick={() => {
+                      logoInputRef.current.click();
+                      setError((prev) => ({ ...prev, logo: "" }));
+                    }}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: "8px",
+                      bgcolor: "#704977",
+                      boxShadow: "none",
+                      py: 1,
+                      "&:hover": {
+                        bgcolor: "#5a3a60",
+                        boxShadow: "0 2px 8px rgba(112, 73, 119, 0.2)",
+                      },
+                    }}
+                  >
+                    {logo ? "Change Logo" : "Upload Logo"}
+                  </Button>
+                  {logo && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setLogo(null);
+                        logoInputRef.current.value = "";
+                      }}
+                      sx={{
+                        minWidth: "auto",
+                        px: 2,
+                        borderRadius: "8px",
+                        borderColor: "#e0e0e0",
+                        color: "#666",
+                        "&:hover": {
+                          borderColor: "#d32f2f",
+                          color: "#d32f2f",
+                          bgcolor: "transparent",
+                        },
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
+                {error.logo && (
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 1, display: "block" }}
+                  >
+                    {error.logo}
+                  </Typography>
+                )}
+              </Box>
+
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: "10px",
+                  bgcolor: "#f9f9f9",
+                  border: "1px solid #f0f0f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: "#333" }}
+                  >
+                    Enable Frame
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#888" }}>
+                    Apply CTA border
+                  </Typography>
+                </Box>
+                <Switch color="secondary" size="small" />
+              </Box>
+            </Box>
+          </Box>
 
           <TextField
             disabled={isLoading}
             fullWidth
-            label="Enter Prompt (optional)"
-            variant="outlined"
+            placeholder="Enter Prompt"
             value={promptValue}
             onChange={(e) => {
               setPromptValue(e.target.value);
             }}
-            sx={{ bgcolor: "white" }}
+            sx={{
+              bgcolor: "#E6E3EA",
+              borderRadius: "8px",
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#555552", // normal
+                },
+                "&:hover fieldset": {
+                  borderColor: "#704977", // hover color
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#704977", // focus color
+                },
+              },
+            }}
           />
-
-          <input
-            disabled={isLoading}
-            ref={logoInputRef}
-            type="file"
-            accept="image/png,image/svg+xml"
-            style={{ display: "none" }}
-            onChange={handleLogoUpload}
-          />
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              variant="outlined"
-              disabled={isLoading}
-              onClick={() => {
-                logoInputRef.current.click();
-                setError((prev) => ({ ...prev, logo: "" }));
-              }}
-              sx={{ textTransform: "none", borderRadius: "8px" }}
-            >
-              {logo ? "Change Logo" : "Upload Logo (optional)"}
-            </Button>
-            {logo && (
-              <Button
-                variant="text"
-                color="error"
-                size="small"
-                disabled={isLoading}
-                onClick={() => {
-                  setLogo(null);
-                  logoInputRef.current.value = "";
-                  setError((prev) => ({ ...prev, logo: "" }));
-                }}
-                sx={{ textTransform: "none" }}
-              >
-                Remove
-              </Button>
-            )}
-            {error.logo && (
-              <Typography variant="body2" color="error">
-                {error.logo}
-              </Typography>
-            )}
-          </Box>
 
           <Button
             type="submit"
@@ -272,6 +405,7 @@ export default function Home() {
               fontSize: "1.1rem",
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              bgcolor: "#704977",
             }}
           >
             {isLoading ? "Generating..." : "Generate"}
@@ -286,7 +420,7 @@ export default function Home() {
           flex: 1,
           borderRadius: 4,
           textAlign: "center",
-          bgcolor: "#fdfdfd",
+          bgcolor: "#ffff",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -303,7 +437,7 @@ export default function Home() {
             minHeight: "250px",
             width: "100%",
             alignItems: "center",
-            bgcolor: "#fafafa",
+            bgcolor: "#ffff",
           }}
         >
           {!qrdata ? (
@@ -379,6 +513,7 @@ export default function Home() {
               fontSize: "1.1rem",
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              bgcolor: "#704977",
             }}
             disabled={!qrdata || isLoading}
           >
