@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Box,
   Container,
@@ -14,11 +14,22 @@ import DownloadIcon from "@mui/icons-material/Download";
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [qrdata, setQrData] = useState(null);
+  const [color, setColor] = useState("#000000");
+  const [logo, setLogo] = useState(null);
+  const logoInputRef = useRef(null);
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogo(ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleGenerate = async () => {
     try {
       const response = await fetch(
-        `/api/base-qr?url=${encodeURIComponent(inputValue)}`,
+        `/api/base-qr?url=${encodeURIComponent(inputValue)}&color=${encodeURIComponent(color)}`,
       );
       const data = await response.json();
       if (data.qrCode) {
@@ -66,6 +77,45 @@ export default function Home() {
             onChange={(e) => setInputValue(e.target.value)}
             sx={{ bgcolor: "white" }}
           />
+
+          <TextField
+            label="Foreground QR Color"
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            sx={{ width: 150 }}
+          />
+
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleLogoUpload}
+          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => logoInputRef.current.click()}
+              sx={{ textTransform: "none", borderRadius: "8px" }}
+            >
+              {logo ? "Change Logo" : "Upload Logo (optional)"}
+            </Button>
+            {logo && (
+              <Button
+                variant="text"
+                color="error"
+                size="small"
+                onClick={() => {
+                  setLogo(null);
+                  logoInputRef.current.value = "";
+                }}
+                sx={{ textTransform: "none" }}
+              >
+                Remove
+              </Button>
+            )}
+          </Box>
 
           <Button
             variant="contained"
@@ -117,16 +167,22 @@ export default function Home() {
               Enter a URL to generate QR code
             </Typography>
           ) : (
-            <Image
-              src={qrdata}
-              alt="Generated QR Code"
-              width={250}
-              height={250}
-              unoptimized
-            />
+            <Box sx={{ position: "relative", width: 250, height: 250 }}>
+              <Image
+                src={qrdata}
+                alt="Generated QR Code"
+                width={250}
+                height={250}
+                unoptimized
+              />
+            </Box>
           )}
         </Box>
-        <a href={qrdata} download={"qrCode.png"} style={{ textDecoration: "none" }}>
+        <a
+          href={qrdata}
+          download={"qrCode.png"}
+          style={{ textDecoration: "none" }}
+        >
           <Button
             variant="contained"
             size="large"
