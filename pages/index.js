@@ -14,6 +14,21 @@ export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [qrdata, setQrData] = useState(null);
 
+    const handleGenerate = async () => {
+    try {
+      const response = await fetch(
+        `/api/base-qr?url=${encodeURIComponent(inputValue)}`,
+      );
+      const data = await response.json();
+      if (data.qrCode) {
+        setQrData(data.qrCode);
+      }
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+    }
+  };
+
+
   
 
   return (
