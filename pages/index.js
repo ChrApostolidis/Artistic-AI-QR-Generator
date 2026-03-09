@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
 import {
@@ -175,6 +176,30 @@ export default function Home() {
                 height={250}
                 unoptimized
               />
+              {logo && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    bgcolor: "white",
+                    borderRadius: 1.5,
+                    p: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Image
+                    src={logo}
+                    alt="Logo"
+                    width={50}
+                    height={50}
+                    style={{ objectFit: "contain", display: "block" }}
+                  />
+                </Box>
+              )}
             </Box>
           )}
         </Box>
