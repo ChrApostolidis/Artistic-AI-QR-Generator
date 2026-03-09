@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import DownloadIcon from "@mui/icons-material/Download";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
@@ -17,6 +18,7 @@ export default function Home() {
   const [qrdata, setQrData] = useState(null);
   const [color, setColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const logoInputRef = useRef(null);
   const [error, setError] = useState({ url: "", logo: "" });
@@ -48,9 +50,11 @@ export default function Home() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     if (!inputValue.trim()) {
       setError((prev) => ({ ...prev, url: "Please enter a valid URL." }));
+      setIsLoading(false);
       return;
     }
 
@@ -59,6 +63,7 @@ export default function Home() {
         ...prev,
         url: "Please enter a valid URL (e.g., https://example.com).",
       }));
+      setIsLoading(false);
       return;
     }
 
@@ -71,7 +76,6 @@ export default function Home() {
         ? inputValue
         : `https://${inputValue.replace(/^http:\/\//i, "")}`;
 
-
       // Fetch the base QR code from our API
       const baseQR = await fetch(
         `/api/base-qr?url=${encodeURIComponent(normalizedUrl)}&color=${encodeURIComponent(color)}`,
@@ -82,6 +86,7 @@ export default function Home() {
           ...prev,
           url: "Failed to generate QR code. Please try again.",
         }));
+        setIsLoading(false);
         return;
       }
 
@@ -92,11 +97,13 @@ export default function Home() {
           ...prev,
           url: "Failed to generate QR code. Please try again.",
         }));
+        setIsLoading(false);
         return;
       }
 
       if (!promptValue.trim()) {
         setQrData(data.qrCode);
+        setIsLoading(false);
         return;
       }
 
@@ -116,6 +123,7 @@ export default function Home() {
           ...prev,
           url: "Failed to create AI QR code. Please try again.",
         }));
+        setIsLoading(false);
         return;
       }
 
@@ -125,16 +133,18 @@ export default function Home() {
           ...prev,
           url: "Failed to create AI QR code. Please try again.",
         }));
+        setIsLoading(false);
       } else {
         setQrData(artisticData.b64);
+        setIsLoading(false);
       }
-
     } catch (err) {
       console.error("Error fetching QR code:", err);
       setError((prev) => ({
         ...prev,
         url: "Network error. Please check your connection and try again.",
       }));
+      setIsLoading(false);
     }
   };
 
@@ -173,6 +183,7 @@ export default function Home() {
         >
           <TextField
             fullWidth
+            disabled={isLoading}
             label="Enter URL"
             variant="outlined"
             value={inputValue}
@@ -186,6 +197,7 @@ export default function Home() {
           />
 
           <TextField
+            disabled={isLoading}
             label="Foreground QR Color"
             type="color"
             value={color}
@@ -194,6 +206,7 @@ export default function Home() {
           />
 
           <TextField
+            disabled={isLoading}
             fullWidth
             label="Enter Prompt (optional)"
             variant="outlined"
@@ -205,6 +218,7 @@ export default function Home() {
           />
 
           <input
+            disabled={isLoading}
             ref={logoInputRef}
             type="file"
             accept="image/png,image/svg+xml"
@@ -214,6 +228,7 @@ export default function Home() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
               variant="outlined"
+              disabled={isLoading}
               onClick={() => {
                 logoInputRef.current.click();
                 setError((prev) => ({ ...prev, logo: "" }));
@@ -227,6 +242,7 @@ export default function Home() {
                 variant="text"
                 color="error"
                 size="small"
+                disabled={isLoading}
                 onClick={() => {
                   setLogo(null);
                   logoInputRef.current.value = "";
@@ -247,6 +263,7 @@ export default function Home() {
           <Button
             type="submit"
             variant="contained"
+            disabled={isLoading}
             size="large"
             startIcon={<QrCodeIcon />}
             sx={{
@@ -257,7 +274,7 @@ export default function Home() {
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             }}
           >
-            Generate
+            {isLoading ? "Generating..." : "Generate"}
           </Button>
         </Box>
       </Paper>
@@ -298,9 +315,18 @@ export default function Home() {
                 gap: 1,
               }}
             >
-              <Typography variant="caption" color="textSecondary">
-                Enter a URL and click Generate
-              </Typography>
+              {isLoading ? (
+                <>
+                  <CircularProgress size={28} />
+                  <Typography variant="caption" color="textSecondary">
+                    Generating...
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="caption" color="textSecondary">
+                  Enter a URL and click Generate
+                </Typography>
+              )}
             </Box>
           ) : (
             <Box sx={{ position: "relative", width: 250, height: 250 }}>
@@ -354,7 +380,7 @@ export default function Home() {
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             }}
-            disabled={!qrdata}
+            disabled={!qrdata || isLoading}
           >
             Download QR Code
           </Button>
