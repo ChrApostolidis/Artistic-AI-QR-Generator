@@ -9,12 +9,13 @@ import {
   Paper,
 } from "@mui/material";
 import QrCodeIcon from "@mui/icons-material/QrCode";
+import DownloadIcon from "@mui/icons-material/Download";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [qrdata, setQrData] = useState(null);
 
-    const handleGenerate = async () => {
+  const handleGenerate = async () => {
     try {
       const response = await fetch(
         `/api/base-qr?url=${encodeURIComponent(inputValue)}`,
@@ -28,16 +29,13 @@ export default function Home() {
     }
   };
 
-
-  
-
   return (
     <Container
       maxWidth="lg"
       sx={{
         mt: 8,
         display: "flex",
-        flexDirection: {xs: "column", md:"row"},
+        flexDirection: { xs: "column", md: "row" },
         alignItems: "flex-start",
         gap: 4,
       }}
@@ -73,6 +71,7 @@ export default function Home() {
             variant="contained"
             size="large"
             startIcon={<QrCodeIcon />}
+            onClick={handleGenerate}
             sx={{
               py: 1.5,
               textTransform: "none",
@@ -89,7 +88,7 @@ export default function Home() {
       <Paper
         elevation={3}
         sx={{
-          p: {xs: 1, md: 4},
+          p: { xs: 1, md: 4 },
           flex: 1,
           borderRadius: 4,
           textAlign: "center",
@@ -97,6 +96,7 @@ export default function Home() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          gap: 2,
         }}
       >
         <Box
@@ -126,7 +126,23 @@ export default function Home() {
             />
           )}
         </Box>
-
+        <a href={qrdata} download={"qrCode.png"} style={{ textDecoration: "none" }}>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<DownloadIcon />}
+            sx={{
+              py: 1.5,
+              textTransform: "none",
+              fontSize: "1.1rem",
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            }}
+            disabled={!qrdata}
+          >
+            Download QR Code
+          </Button>
+        </a>
       </Paper>
     </Container>
   );
