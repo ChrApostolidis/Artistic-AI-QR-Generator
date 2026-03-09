@@ -13,6 +13,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
+  const [promptValue, setPromptValue] = useState("");
   const [qrdata, setQrData] = useState(null);
   const [color, setColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
@@ -70,18 +71,70 @@ export default function Home() {
         ? inputValue
         : `https://${inputValue.replace(/^http:\/\//i, "")}`;
 
-      const response = await fetch(
+
+      // Fetch the base QR code from our API
+      const baseQR = await fetch(
         `/api/base-qr?url=${encodeURIComponent(normalizedUrl)}&color=${encodeURIComponent(color)}`,
       );
-      const data = await response.json();
-      if (data.qrCode) {
-        setQrData(data.qrCode);
-      } else if (data.error) {
-        setError((prev) => ({ ...prev, url: "Failed to generate QR code. Please try again." }));
+
+      if (!baseQR.ok) {
+        setError((prev) => ({
+          ...prev,
+          url: "Failed to generate QR code. Please try again.",
+        }));
+        return;
       }
+
+      const data = await baseQR.json();
+
+      if (data.error) {
+        setError((prev) => ({
+          ...prev,
+          url: "Failed to generate QR code. Please try again.",
+        }));
+        return;
+      }
+
+      if (!promptValue.trim()) {
+        setQrData(data.qrCode);
+        return;
+      }
+
+      // Send the base QR and prompt to the Artistic API
+      const aiQR = await fetch("/api/art-qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          baseQrURL: data.qrCode,
+          userPrompt: promptValue,
+        }),
+      });
+
+      if (!aiQR.ok) {
+        console.log("AI QR API error:", aiQR.statusText);
+        setError((prev) => ({
+          ...prev,
+          url: "Failed to create AI QR code. Please try again.",
+        }));
+        return;
+      }
+
+      const artisticData = await aiQR.json();
+      if (artisticData.error) {
+        setError((prev) => ({
+          ...prev,
+          url: "Failed to create AI QR code. Please try again.",
+        }));
+      } else {
+        setQrData(artisticData.b64);
+      }
+
     } catch (err) {
       console.error("Error fetching QR code:", err);
-      setError((prev) => ({ ...prev, url: "Network error. Please check your connection and try again." }));
+      setError((prev) => ({
+        ...prev,
+        url: "Network error. Please check your connection and try again.",
+      }));
     }
   };
 
@@ -138,6 +191,17 @@ export default function Home() {
             value={color}
             onChange={(e) => setColor(e.target.value)}
             sx={{ width: 150 }}
+          />
+
+          <TextField
+            fullWidth
+            label="Enter Prompt (optional)"
+            variant="outlined"
+            value={promptValue}
+            onChange={(e) => {
+              setPromptValue(e.target.value);
+            }}
+            sx={{ bgcolor: "white" }}
           />
 
           <input
@@ -226,9 +290,18 @@ export default function Home() {
           }}
         >
           {!qrdata ? (
-            <Typography variant="body1" color="textSecondary">
-              Enter a URL to generate QR code
-            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <Typography variant="caption" color="textSecondary">
+                Enter a URL and click Generate
+              </Typography>
+            </Box>
           ) : (
             <Box sx={{ position: "relative", width: 250, height: 250 }}>
               <Image
