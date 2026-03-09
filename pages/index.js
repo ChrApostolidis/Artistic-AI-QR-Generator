@@ -17,11 +17,18 @@ export default function Home() {
   const [qrdata, setQrData] = useState(null);
   const [color, setColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
+  const [error, setError] = useState(null);
   const logoInputRef = useRef(null);
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const allowed = ["image/png", "image/svg+xml"];
+    if (!allowed.includes(file.type)) {
+      setError("Only PNG and SVG files are allowed for logo.");
+      e.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => setLogo(ev.target.result);
     reader.readAsDataURL(file);
@@ -90,14 +97,17 @@ export default function Home() {
           <input
             ref={logoInputRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/svg+xml"
             style={{ display: "none" }}
             onChange={handleLogoUpload}
           />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
               variant="outlined"
-              onClick={() => logoInputRef.current.click()}
+              onClick={() => {
+                logoInputRef.current.click();
+                setError(null);
+              }}
               sx={{ textTransform: "none", borderRadius: "8px" }}
             >
               {logo ? "Change Logo" : "Upload Logo (optional)"}
@@ -110,11 +120,17 @@ export default function Home() {
                 onClick={() => {
                   setLogo(null);
                   logoInputRef.current.value = "";
+                  setError(null);
                 }}
                 sx={{ textTransform: "none" }}
               >
                 Remove
               </Button>
+            )}
+            {error && (
+              <Typography variant="body2" color="error">
+                {error}
+              </Typography>
             )}
           </Box>
 
