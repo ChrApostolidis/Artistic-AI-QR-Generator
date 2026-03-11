@@ -13,11 +13,12 @@ import DownloadIcon from "@mui/icons-material/Download";
 import CircularProgress from "@mui/material/CircularProgress";
 import { HexColorPicker } from "react-colorful";
 import { Switch } from "@mui/material";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [promptValue, setPromptValue] = useState("");
-  const [qrdata, setQrData] = useState(null);
+  const [qrdata, setQrData] = useState(undefined);
   const [dataColor, setDataColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,9 +82,17 @@ export default function Home() {
         : `https://${inputValue.replace(/^http:\/\//i, "")}`;
 
       // Fetch the base QR code from our API
-      const baseQR = await fetch(
-        `/api/base-qr?url=${encodeURIComponent(normalizedUrl)}&dataColor=${encodeURIComponent(dataColor)}&logo=${encodeURIComponent(logo)}`,
-      );
+      const baseQR = await fetch("/api/base-qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: normalizedUrl,
+          dataColor: dataColor,
+          logo: logo,
+        }),
+      });
 
       if (!baseQR.ok) {
         setError((prev) => ({
@@ -112,7 +121,7 @@ export default function Home() {
       }
 
       // Send the base QR and prompt to the Artistic API
-      const aiQR = await fetch("/api/art-qr", {
+      const aiQR = await fetch("/api/artistic-ai-qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -260,7 +269,7 @@ export default function Home() {
                 flexDirection: "column",
                 justifyContent: "space-between",
                 flex: 1,
-                gap: 2,
+                gap: 4,
               }}
             >
               <Box>
@@ -283,7 +292,7 @@ export default function Home() {
                   style={{ display: "none" }}
                   onChange={handleLogoUpload}
                 />
-                <Box sx={{ display: "flex", gap: 1 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <Button
                     variant="contained"
                     fullWidth
@@ -420,7 +429,7 @@ export default function Home() {
           flex: 1,
           borderRadius: 4,
           textAlign: "center",
-          bgcolor: "#ffff",
+          bgcolor: "#ffffff",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -434,13 +443,13 @@ export default function Home() {
             justifyContent: "center",
             border: "1px dashed #ccc",
             borderRadius: 2,
-            minHeight: "250px",
-            width: "100%",
+            width: 400,
+            height: 400,
             alignItems: "center",
-            bgcolor: "#ffff",
+            bgcolor: "#9c9a9a",
           }}
         >
-          {!qrdata ? (
+          {isLoading ? (
             <Box
               sx={{
                 display: "flex",
@@ -449,53 +458,69 @@ export default function Home() {
                 gap: 1,
               }}
             >
-              {isLoading ? (
-                <>
-                  <CircularProgress size={28} />
-                  <Typography variant="caption" color="textSecondary">
-                    Generating...
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="caption" color="textSecondary">
-                  Enter a URL and click Generate
-                </Typography>
-              )}
+              <CircularProgress size={28} />
+              <Typography variant="caption" color="textSecondary">
+                Generating...
+              </Typography>
             </Box>
-          ) : (
-            <Box sx={{ position: "relative", width: 250, height: 250 }}>
+          ) : qrdata === null ? (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                color: "#999",
+              }}
+            >
+              <Typography variant="body2" color="textSecondary">
+                Failed to generate QR code
+              </Typography>
+            </Box>
+          ) : qrdata && qrdata.startsWith("data:image") ? (
+            <Box
+              sx={{
+                position: "relative",
+                width: 400,
+                height: 400,
+                bgcolor: "#9c9a9a",
+                borderRadius: 2,
+              }}
+            >
               <Image
                 src={qrdata}
                 alt="Generated QR Code"
-                width={250}
-                height={250}
+                width={400}
+                height={400}
                 unoptimized
               />
-              {logo && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    bgcolor: "white",
-                    borderRadius: 1.5,
-                    p: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Image
-                    src={logo}
-                    alt="Logo"
-                    width={50}
-                    height={50}
-                    style={{ objectFit: "contain", display: "block" }}
-                  />
-                </Box>
-              )}
             </Box>
+          ) : qrdata === undefined ? (
+            <QRCodeSVG
+              value="https://ilo.com.gr/"
+              size={300}
+              marginSize={3}
+              level="H"
+              fgColor={dataColor}
+              imageSettings={{
+                src: logo,
+                height: 60,
+                width: 80,
+              }}
+            />
+          ) : (
+            <QRCodeSVG
+              value={qrdata}
+              size={300}
+              marginSize={3}
+              level="H"
+              fgColor={dataColor}
+              imageSettings={{
+                src: logo,
+                height: 60,
+                width: 80,
+              }}
+            />
           )}
         </Box>
         <a
@@ -515,7 +540,7 @@ export default function Home() {
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               bgcolor: "#704977",
             }}
-            disabled={!qrdata || isLoading}
+            disabled={!qrdata || !qrdata.startsWith("data:image") || isLoading}
           >
             Download QR Code
           </Button>
