@@ -14,6 +14,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { HexColorPicker } from "react-colorful";
 import { Switch } from "@mui/material";
 import { QRCodeSVG } from "qrcode.react";
+import styles from "../styles/Home.module.css";
+
+const tabs = ["GPT", "GEMINI", "COMFY"];
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
@@ -22,6 +25,7 @@ export default function Home() {
   const [dataColor, setDataColor] = useState("#000000");
   const [logo, setLogo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelPick, setModelPick] = useState("GPT");
 
   const logoInputRef = useRef(null);
   const [error, setError] = useState({ url: "", logo: "" });
@@ -224,20 +228,7 @@ export default function Home() {
             helperText={error.url ?? " "}
           />
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              alignItems: "stretch",
-              gap: 4,
-              justifyContent: "center",
-              p: 3,
-              bgcolor: "#ffffff",
-              borderRadius: "16px",
-              border: "1px solid #eaeaea",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
-            }}
-          >
+          <Box className={styles.optionsContainer}>
             <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
               <Typography
                 variant="overline"
@@ -373,6 +364,42 @@ export default function Home() {
                   </Typography>
                 </Box>
                 <Switch color="secondary" size="small" />
+              </Box>
+            </Box>
+          </Box>
+
+          <Box className={styles.optionsContainer}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Typography
+                variant="overline"
+                sx={{
+                  mb: 1.5,
+                  color: "#888",
+                  fontWeight: 700,
+                  display: "block",
+                }}
+              >
+                AI Model PICK
+              </Typography>
+
+              <Box
+               className={styles.tabsContainer}
+              >
+                {tabs.map((tab) => (
+                  <Box
+                    key={tab}
+                    onClick={() => setModelPick(tab)}
+                    className={`${styles.tabs} ${modelPick === tab ? styles.activeTab : ""}`}
+                  >
+                    {tab}
+                  </Box>
+                ))}
               </Box>
             </Box>
           </Box>
