@@ -17,6 +17,11 @@ import { QRCodeSVG } from "qrcode.react";
 import styles from "../styles/Home.module.css";
 
 const tabs = ["GPT", "GEMINI", "COMFY"];
+const apiEndpoints = {
+  GPT: "/api/artistic-ai-qr",
+  GEMINI: "/api/artistic-ai-qr-gemini",
+  COMFY: "/api/artistic-ai-qr-comfy",
+};
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
@@ -26,6 +31,7 @@ export default function Home() {
   const [logo, setLogo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [modelPick, setModelPick] = useState("GPT");
+  const [frameEnabled, setFrameEnabled] = useState(false);
 
   const logoInputRef = useRef(null);
   const [error, setError] = useState({ url: "", logo: "" });
@@ -95,6 +101,7 @@ export default function Home() {
           url: normalizedUrl,
           dataColor: dataColor,
           logo: logo,
+          frameEnabled: frameEnabled,
         }),
       });
 
@@ -124,8 +131,14 @@ export default function Home() {
         return;
       }
 
-      // Send the base QR and prompt to the Artistic API
-      const aiQR = await fetch("/api/artistic-ai-qr", {
+      const endpoint = apiEndpoints[modelPick];
+
+      if (!endpoint) {
+        setError((prev) => ({ ...prev, url: "Invalid model selection." }));
+        return;
+      }
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -135,8 +148,8 @@ export default function Home() {
         }),
       });
 
-      if (!aiQR.ok) {
-        console.log("AI QR API error:", aiQR.statusText);
+      if (!response.ok) {
+        console.log("AI QR API error:", response.statusText);
         setError((prev) => ({
           ...prev,
           url: "Failed to create AI QR code. Please try again.",
@@ -145,15 +158,15 @@ export default function Home() {
         return;
       }
 
-      const artisticData = await aiQR.json();
-      if (artisticData.error) {
+      const artisticQRData = await response.json();
+      if (artisticQRData.error) {
         setError((prev) => ({
           ...prev,
           url: "Failed to create AI QR code. Please try again.",
         }));
         setIsLoading(false);
       } else {
-        setQrData(artisticData.b64);
+        setQrData(artisticQRData.b64);
         setIsLoading(false);
       }
     } catch (err) {
@@ -363,7 +376,12 @@ export default function Home() {
                     Apply CTA border
                   </Typography>
                 </Box>
-                <Switch color="secondary" size="small" />
+                <Switch
+                  color="secondary"
+                  size="small"
+                  checked={frameEnabled}
+                  onChange={(e) => setFrameEnabled(e.target.checked)}
+                />
               </Box>
             </Box>
           </Box>
@@ -388,9 +406,7 @@ export default function Home() {
                 AI Model PICK
               </Typography>
 
-              <Box
-               className={styles.tabsContainer}
-              >
+              <Box className={styles.tabsContainer}>
                 {tabs.map((tab) => (
                   <Box
                     key={tab}
@@ -473,7 +489,7 @@ export default function Home() {
             width: 400,
             height: 400,
             alignItems: "center",
-            bgcolor: "#9c9a9a",
+            bgcolor: "#ffff",
           }}
         >
           {isLoading ? (
@@ -510,7 +526,7 @@ export default function Home() {
                 position: "relative",
                 width: 400,
                 height: 400,
-                bgcolor: "#9c9a9a",
+                bgcolor: "#ffff",
                 borderRadius: 2,
               }}
             >
@@ -518,7 +534,7 @@ export default function Home() {
                 src={qrdata}
                 alt="Generated QR Code"
                 width={400}
-                height={400}
+                height={420}
                 unoptimized
               />
             </Box>
